@@ -99,12 +99,43 @@
                     <div class="row justify-content-center">
                         <div class="col-lg-8 col-xl-7">
                             <div class="form-floating mb-3">
-                                <input class="form-control" id="consumo_total" name="consumo_total" type="text" required />
+                                <input  class="form-control" id="consumo_total" name="consumo_total" type="text" required />
                                 <label for="consumo_total">Consumo Total(kwh)</label>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <div class="row">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 col-xl-7 mb-3">
+                            {% if porcentaje_renovable is not none %}
+                                <div class="resultado">
+                                    <h4> 
+                                        <span class="badge text-bg-success"> 
+                                            <i class="fas fa-solar-panel"></i>
+                                            El porcentaje de energía renovable en tu consumo es:
+                                            {{porcentaje_renovable | round(2)}}%
+                                        </span> 
+                                    </h4>
+                                </div>
+
+                                {% elif error %}
+                                    <div class="error">
+                                        <h4>
+                                            <span class="badge text-bg-danger">
+                                                {{ error }}
+                                            </span>
+                                        </h4>
+                                    </div>
+                                {% endif %}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
                 <div class="text-center mt-4">
                     <button class="btn btn-xl btn-outline-light">
                         <i class="fas fa-plug me-2 text-white"></i>Calcular</button>
@@ -160,7 +191,7 @@
 
     <!-- pruebas js -->
 
-    <div class="container bg-info">
+    <!--<div class="container bg-info">
         <label for=" " class="col-md-2">
             <input type="text" id="num1" class="form-control" placeholder="Ingrese número 1" >
         </label>
@@ -173,7 +204,7 @@
         </label>
 
 
-    </div>
+    </div> -->
 
 
 
