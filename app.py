@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request
 import csv
-import pandas as pd 
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from io import BytesIO
@@ -30,22 +30,23 @@ datos_renovables = cargar_datos_renovables(RUTA_CSV)
 
 DATA_DIR = 'static/archivo/'
 FILES = {
-    "Wind" : ("08 wind-generation.csv", "Electricity from wind (TWh)"),
-    "Solar" : ("12 solar-energy-consumption.csv", "Electricity from solar (TWh)"),
-    "Hydropower" : ("05 hydropower-consumption.csv", "Electricity from hydro (TWh)"),
-    "Biofuels" : ("16 biofuel-production.csv", "Biofuels Production - TWh - Total"),
-    "Geothermal" : ("17 installed-geothermal-capacity.csv", "Geothermal Capacity")
+    "Wind":("08 wind-generation.csv","Electricity from wind (TWh)"),
+    "Solar":("12 solar-energy-consumption.csv","Electricity from solar (TWh)"),
+    "Hydropower":("05 hydropower-consumption.csv","Electricity from hydro (TWh)"),
+    "Biofuels":("16 biofuel-production.csv", "Biofuels Production - TWh - Total"),
+    "Geothermal":("17 installed-geothermal-capacity.csv","Geothermal Capacity")
 }
 
 def load_data():
     data={}
     for key, (file_name, column) in FILES.items():
-        file_path = os.path.join(DATA_DIR, file_name)
+        file_path = os.path.join(DATA_DIR,file_name)
         if os.path.exists(file_path):
             df = pd.read_csv(file_path)
             total_production = df[column].sum()
             data[key] = total_production
     return data
+
 
 @app.route('/', methods=['GET', 'POST'])#@app.route('/'): Este es un decorador que se usa para vincular una URL (en este caso, la raíz '/') con una función. La función index() se ejecutará cuando un usuario acceda a la raíz de la aplicación.
 
@@ -53,27 +54,60 @@ def index():
     porcentaje_renovable = None
     error = None
 
-    #-------------------------------------------- GRAFICA DE BARRAS -------------------------------------------
-
+    #--------------GRAFICA DE BARRAS----------------
     data = load_data()
     plt.subplots(figsize=(3,2))
-    df = pd.DataFrame(list(data.items()), columns=['Fuente', 'Producción (TWh)'])
+    df = pd.DataFrame(list(data.items()),columns=['Fuente', 'Producción (TWh)'])
 
     fig, ax = plt.subplots(figsize=(5,4))
     ax.bar(df['Fuente'], df['Producción (TWh)'], color=['lightgreen', 'gray', 'lightgreen', 'gray', 'lightgreen'])
 
-    ax.set_title('Producción de Energía Renovable por Fuente', fontsize=12)
+    ax.set_title('Producción de Energía Renovable por Fuente',fontsize=12)
     ax.set_xlabel('Fuente de Energía', fontsize=12)
     ax.set_ylabel('Producción (TWh)', fontsize=12)
 
-    #------------------------------------- Convertimos la gráfica en imagen -----------------------------------
     img = BytesIO()
     plt.tight_layout()
     plt.savefig(img, format='png')
     img.seek(0)
     graph_url = base64.b64encode(img.getvalue()).decode('utf-8')
-    #----------------------------------------------------------------------------------------------------------
+    
+    #----------------------------------------------------
+    #---------------------GRAFICO DE TORTA---------------
+    df_renewables = pd.read_csv('static/archivo/04 share-electricity-renewables.csv')
+    df_wind = pd.read_csv('static/archivo/11 share-electricity-wind.csv')
+    df_solar = pd.read_csv('static/archivo/15 share-electricity-solar.csv')
+    df_hydro = pd.read_csv('static/archivo/07 share-electricity-hydro.csv')
 
+    year = df_renewables['Year'].max()
+    renewables_data = df_renewables[df_renewables['Year'] == year]
+    wind_data = df_wind[df_wind['Year'] == year]
+    solar_data = df_solar[df_solar['Year'] == year]
+    hydro_data = df_hydro[df_hydro['Year'] == year]
+
+    df = pd.merge(renewables_data[['Entity', 'Renewables (% electricity)']], wind_data[['Entity', 'Wind (% electricity)']], on='Entity')
+    df = pd.merge(df, solar_data[['Entity', 'Solar (% electricity)']], on='Entity')
+    df = pd.merge(df, hydro_data[['Entity', 'Hydro (% electricity)']], on='Entity')
+
+    wind_percentage = df['Wind (% electricity)'].values[0]
+    solar_percentage = df['Solar (% electricity)'].values[0]
+    hydro_percentage = df['Hydro (% electricity)'].values[0]
+
+    total_renewables = wind_percentage+solar_percentage+hydro_percentage
+    data = {
+        'Energía Renovable':['Eólica','Solar','Hidráulica'],
+        'Participación':[wind_percentage,solar_percentage,hydro_percentage]
+    }
+    df_graph = pd.DataFrame(data)
+    fig, ax = plt.subplots()
+    ax.set_title('Participación de Energías Renovables', fontsize=14)
+    ax.pie(df_graph['Participación'], labels=df_graph['Energía Renovable'], autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    graph_url2 = base64.b64encode(img.getvalue()).decode('utf-8')
+    #-------------------------------------------------
     
     if request.method == 'POST':
         try:
@@ -90,7 +124,7 @@ def index():
         except ValueError:
             error ="Por Favor ingrese un valor válido para el consumo total."
     
-    return render_template('index.html',porcentaje_renovable = porcentaje_renovable, error = error, graph_url = graph_url)
+    return render_template('index.html',porcentaje_renovable = porcentaje_renovable, error = error, graph_url=graph_url, graph_url2=graph_url2)
 
 if __name__ == '__main__':
     app.run(debug=True)#Este bloque verifica si el script está siendo ejecutado directamente (y no importado como un módulo en otro programa). Si es así, ejecuta el servidor de desarrollo de Flask con app.run(debug=True)
