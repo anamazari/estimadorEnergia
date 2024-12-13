@@ -101,7 +101,7 @@ def index():
     df_graph = pd.DataFrame(data)
     fig, ax = plt.subplots()
     ax.set_title('Participación de Energías Renovables', fontsize=14)
-    ax.pie(df_graph['Participación'], labels=df_graph['Energía Renovable'], autopct='%1.1f%%', startangle=90)
+    ax.pie(df_graph['Participación'], labels=df_graph['Energía Renovable'], colors=['lightgray', 'gray', 'lightgreen'], autopct='%1.1f%%', startangle=90)
     ax.axis('equal')
     img = BytesIO()
     plt.savefig(img, format='png')
@@ -158,6 +158,11 @@ def index():
     plt.close()
 
     #---------------------------------------------------
+
+    with open('static/archivo/data_pagina.csv', newline='', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        data = [row for row in reader]
+
     
     if request.method == 'POST':
         try:
@@ -174,7 +179,7 @@ def index():
         except ValueError:
             error ="Por Favor ingrese un valor válido para el consumo total."
     
-    return render_template('index.html',porcentaje_renovable = porcentaje_renovable, error = error, graph_url=graph_url, graph_url2=graph_url2, graph_url3=graph_url3, graph_url4=graph_url4 )
+    return render_template('index.html',porcentaje_renovable = porcentaje_renovable, error = error, graph_url=graph_url, graph_url2=graph_url2, graph_url3=graph_url3, graph_url4=graph_url4, data=data )
 
 if __name__ == '__main__':
     app.run(debug=True)#Este bloque verifica si el script está siendo ejecutado directamente (y no importado como un módulo en otro programa). Si es así, ejecuta el servidor de desarrollo de Flask con app.run(debug=True)
